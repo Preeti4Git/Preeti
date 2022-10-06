@@ -1,0 +1,79 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Resources": {        
+		"LamdbaFunction": {
+		"Type" : "AWS::Lambda::Function",
+		"Properties" : {
+			"Code" : { 
+				"S3Bucket" : "lambda-function-gl",
+				"S3Key" : "anomaly_detection.zip"
+			},
+			"Handler" : "anomaly_detection.lambda_handler",
+			"PackageType" : "Zip",
+			"Role": {
+				"Fn::GetAtt": [
+					"PullMarketsRole",
+					"Arn"
+				]
+			},
+			"Runtime" : "python3.9",
+			"Timeout" : 100
+			}
+		},
+		"hanle": {
+		"Type" : "AWS::Lambda::EventSourceMapping",
+		"Properties" : {
+			"BatchSize" : 10,
+			"EventSourceArn" : "arn:aws:kinesis:us-east-1:217584094173:stream/m03p02_raw_data_stream",
+			"FunctionName" : {"Ref" :"LamdbaFunction"},
+			"StartingPosition" : "LATEST"
+			}
+		},		
+		"PullMarketsRole": {
+		"Type": "AWS::IAM::Role",
+		"Properties": {
+			"RoleName": "PullMarketsRole",
+			"AssumeRolePolicyDocument": {
+			"Version": "2012-10-17",
+			"Statement": [{
+				"Effect": "Allow",
+				"Principal": {
+				"Service": [ "lambda.amazonaws.com" ]
+				},
+				"Action": [ "sts:AssumeRole" ]
+				}]
+				},
+			"Path": "/",
+			"Policies": [{
+			"PolicyName": "AWSLambdaBasicExecutionRole",
+			"PolicyDocument": {
+				"Version": "2012-10-17",
+				"Statement": [{
+				"Effect": "Allow",
+				"Action": [
+					"logs:CreateLogGroup",
+					"logs:CreateLogStream",
+					"logs:PutLogEvents"
+				],
+				"Resource": "*"
+				}]
+				}
+			},
+			{
+			"PolicyName": "AmazonS3FullAccess",
+			"PolicyDocument": {
+				"Version": "2012-10-17",
+				"Statement": [{
+				"Effect": "Allow",
+				"Action": "s3:*",
+				"Resource": [
+					"arn:aws:s3:::exchange-data-raw",
+					"arn:aws:s3:::exchange-data-raw/*"
+				]
+				}]
+			}
+			}]
+			}
+		}
+    }
+}

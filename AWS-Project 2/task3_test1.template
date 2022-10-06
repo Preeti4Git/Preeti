@@ -1,0 +1,19 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Resources": {        
+		"LamdbaFunction": {
+		"Type" : "AWS::Lambda::Function",
+		"Properties" : {
+			"Code" : { 
+				"S3Bucket" : "lambda-function-gl",
+				"S3Key" : "anomaly_detection.zip"
+			},
+			"Handler" : "anomaly_detection.lambda_handler",
+			"PackageType" : "Zip",
+			"Role": "arn:aws:iam::217584094173:role/aws_lambda",
+			"Runtime" : "python3.9",
+			"Timeout" : 100
+			}
+		}
+    }
+}

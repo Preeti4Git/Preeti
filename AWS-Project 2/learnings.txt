@@ -1,0 +1,146 @@
+Change region to N.Virginia
+Create key pair with name key_gl
+Create role aws_lambda and attach policies for lambda, kinesis, dynamoDB and SNS. attach this role to lambda function
+Create S3 bucket lambda-function-gl and upload file anomaly_detection.zip into it
+
+in CMD,
+aws configure
+cd "C:\Users\ezaggpr\OneDrive - Ericsson\Desktop\Preeti\Great_Learning\Projects\M03-AWS\Project 2"
+
+aws cloudformation create-stack --stack-name gltest-stack --template-body file://task1.template
+
+aws cloudformation create-stack --stack-name gltest-stack --template-body file://task2.template --capabilities CAPABILITY_NAMED_IAM
+
+aws cloudformation delete-stack --stack-name gltest-stack
+
+In EC2 - 
+sudo pip3 install boto3
+vi raw_data.py
+Add iam credentials in boto3 client in raw_data
+python3 raw_data.py
+Update topic_arn in lambda function
+create lambda function with kinesis as input trigger
+add function code to lambda
+create role aws_lambda and attach policies for lambda, kinesis, dynamoDB and SNS. attach this role to lambda function
+increase lambda function timeout, and reduce batch size to 10
+
+
+task2-
+Create codeCommit repository
+in IAM > users > Add permissions > Attach existing policies directly - attach the policy AWSCodeCommitPowerUser, S3FullAccess
+create code commit user credentials in iam > users> user > security credentials
+git clone https://git-codecommit.us-east-1.amazonaws.com/v1/repos/rawdata
+
+In AWSCLI -
+aws iam create-role --role-name CodeDeployDemo-EC2-Instance-Profile --assume-role-policy-document file://CodeDeployDemo-EC2-Trust.json
+
+install code deploy agent on ec2
+
+
+sudo apt update
+
+sudo apt install ruby-full
+
+sudo apt install wget
+
+cd /home/ubuntu
+
+wget https://aws-codedeploy-us-east-1.s3.us-east-1.amazonaws.com/latest/install
+
+chmod +x ./install
+
+sudo ./install auto
+
+The installation instructions for the CodeDeploy Agent are now complete. To check that the service is running, run:
+
+sudo service codedeploy-agent status
+/** It will not return to prompt. Do not press any ctrl+C or anything, just leave the cursor as it is in this window after this command. Open new putty window for any other operations like checking deployment logs.
+
+CodeDeploy agent logs - 
+cd /var/log/aws/codedeploy-agent/
+ubuntu@ip-172-31-91-49:/var/log/aws/codedeploy-agent$ less codedeploy-agent.log
+
+Deployment archive and deployment logs-
+/opt/codedeploy-agent/deployment-root/2f49a21a-58d7-482d-b45f-acd5f17494e0/d-38YC9143G/deployment-archive
+ubuntu@ip-10-0-1-248:/opt/codedeploy-agent/deployment-root/2f49a21a-58d7-482d-b45f-acd5f17494e0/d-1LOX5253G/logs$ less scripts.log
+ubuntu@ip-10-0-1-248:/opt/codedeploy-agent/deployment-root/deployment-logs$
+
+
+below access to IAM role to EC2 - 
+AmazonEC2FullAccess	
+AWSCodeCommitFullAccess	
+AmazonS3FullAccess	 
+CloudWatchFullAccess	
+AmazonDynamoDBFullAccess
+AWSCodeDeployFullAccess	
+AWSCodePipelineFullAccess
+AWSCodeBuildAdminAccess	
+AWSLambda_FullAccess	
+
+
+For below error while creating deployment group in CodeDeploy - 
+AWS CodeDeploy does not have the permissions required to assume the role arn:aws:iam
+
+Edit the IAM role trust policy to -
+
+{
+	"Version": "2012-10-17",
+	"Statement": [
+		{
+			"Effect": "Allow",
+			"Principal": {
+				"Service": [
+					"ec2.amazonaws.com",
+					"codepipeline.amazonaws.com",
+					"codedeploy.amazonaws.com",
+					"codebuild.amazonaws.com",
+					"lambda.amazonaws.com",
+					"s3.amazonaws.com",
+					"cloudwatch.amazonaws.com"
+				]
+			},
+			"Action": "sts:AssumeRole"
+		}
+	]
+}
+
+Task 3 
+------------------
+create role aws_lambda and attach policies for lambda, kinesis, dynamoDB and SNS. attach this role to lambda function
+
+{'ShardId': 'shardId-000000000000', 'SequenceNumber': '49626140547086607229911298279292455610185788308596981762', 'ResponseMetadata': {'RequestId': 'ecf7b160-a7de-5bed-b69d-bbddf9102c1a', 'HTTPStatusCode': 200, 'HTTPHeaders': {'x-amzn-requestid': 'ecf7b160-a7de-5bed-b69d-bbddf9102c1a', 'x-amz-id-2': '96G7x0NRR55AN/Mq3/OWkvmoXwCaVKhsLfWdP5dz8uD2Cu/o/jy5tz7LaNGpTRNpuIH6hJvHny93GwLEBLtNJG1wTjhBX4bYvkCEX8SyihY=', 'date': 'Tue, 25 Jan 2022 14:26:05 GMT', 'content-type': 'application/x-amz-json-1.1', 'content-length': '110'}, 'RetryAttempts': 0}}
+{'ShardId': 'shardId-000000000000', 'SequenceNumber': '49626140547086607229911298279293664536005402937771687938', 'ResponseMetadata': {'RequestId': 'c130f93a-c977-14bc-9b5a-f38497b9634b', 'HTTPStatusCode': 200, 'HTTPHeaders': {'x-amzn-requestid': 'c130f93a-c977-14bc-9b5a-f38497b9634b', 'x-amz-id-2': 'oTiqphW561TA5mdklH/MtJWspFrANLwjBsRraY6SBJ5Pz5LrVMnuk1IUW2GRDAhSU3ciJ8QMQK0qAUdnpGcgRl7D5oorOUOHW7NfR2QQ/8w=', 'date': 'Tue, 25 Jan 2022 14:26:06 GMT', 'content-type': 'application/x-amz-json-1.1', 'content-length': '110'}, 'RetryAttempts': 0}}
+
+
+{'ShardId': 'shardId-000000000000', 'SequenceNumber': '49626631020399393709847934005546644204167306178191163394', 'ResponseMetadata': {'RequestId': 'c19f3c9c-f609-5001-9be0-388767ecde21', 'HTTPStatusCode': 200, 'HTTPHeaders': {'x-amzn-requestid': 'c19f3c9c-f609-5001-9be0-388767ecde21', 'x-amz-id-2': 'eI+wuNzBOUbiRdctWpgOqmEhtKmn7P+f62m8bCawrtbeTCRocb0pGBA1RlI9wJDMkwMnvZzF1+nN7yCwh3rBfwH2+9Unh2/V', 'date': 'Thu, 10 Feb 2022 12:15:23 GMT', 'content-type': 'application/x-amz-json-1.1', 'content-length': '110'}, 'RetryAttempts': 0}}
+{"timestamp": "2022-02-10 12:15:24.092264", "datatype": "Temperature", "value": 97.8, "deviceid": "DHT_001", "date": "2022-02-10", "lowest_temp": 96, "highest_temp": 101}
+
+
+
+Create an IAM role manually and assign to lambda if getting below error - 
+User: arn:aws:sts::217584094173:federated-user/greatlearningco1643111399234 is not authorized to perform: iam:CreatePolicy on resource: policy AWSLambdaBasicExecutionRole-ce9a2baf-cdd2-4185-a0d4-4eedf931a624 with an explicit deny
+
+
+Getting below error in lambda trigger -
+Kinesis: m03p02_raw_data_stream (Disabled)
+arn:aws:kinesis:us-east-1:217584094173:stream/m03p02_raw_data_stream
+Details
+Batch size: 10
+Batch window: None
+Concurrent batches per shard: 1
+Last processing result: PROBLEM: Function not found under accountId 217584094173 in database
+Maximum age of record: -1
+On-failure destination:
+{
+  "onFailure": {}
+}
+Retry attempts: -1
+Split batch on error: No
+Starting position: LATEST
+Tumbling window duration: None
+
+
+
+On adding SNS topic as destination for lambda function, getting below error -
+Your function's execution role doesn't have permission to send result to the destination. By clicking save we'll attempt to add permission to the role for you.
+User: arn:aws:sts::217584094173:federated-user/greatlearningco1644507415177 is not authorized to perform: iam:CreatePolicy on resource: policy AWSLambdaSNSTopicDestinationExecutionRole-684dd414-47b8-4058-8a97-ff5cb90bea80 with an explicit deny

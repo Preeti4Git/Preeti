@@ -1,0 +1,23 @@
+version: 0.0
+os: linux
+files:
+	- source: /
+	  destination: /opt/
+hooks:
+	BeforeInstall:
+		- location: pre-install.sh
+		  timeout: 300
+		  runas: root
+	AfterInstall:
+		- location: post-install.sh
+		  timeout: 300
+		  runas: root
+	ApplicationStart:
+		- location: healthcare-start.sh
+		  timeout: 300
+		  runas: root	
+	ApplicationStop:
+		- location: healthcare-stop.sh
+		  timeout: 300
+		  runas: root
+	

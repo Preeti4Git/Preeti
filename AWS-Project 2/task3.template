@@ -1,0 +1,238 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Resources": {
+	"TestVPC": {
+            "Type": "AWS::EC2::VPC",
+            "Properties": {
+            "CidrBlock": "10.0.0.0/16",
+            "EnableDnsHostnames" : "true", 
+            "EnableDnsSupport" : "true",
+            "Tags" : [ {"Key" : "Name", "Value" : "TestVPC"} ]
+            }
+        },
+		"Subnet1": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "TestVPC"
+                },
+                "Tags" : [ {"Key" : "Name", "Value" : "Subnet1"} ],
+                "CidrBlock" : "10.0.1.0/24",
+      			"AvailabilityZone" : "us-east-1a",
+      			"MapPublicIpOnLaunch" : "true"
+            }
+        },
+        "TestSG": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+            	"SecurityGroupIngress" : [{
+         			"IpProtocol" : "tcp",
+         			"FromPort" : 80,
+         			"ToPort" : 80,
+         			"CidrIp" : "0.0.0.0/0"
+      			},
+      			{
+         			"IpProtocol" : "tcp",
+         			"FromPort" : 22,
+         			"ToPort" : 22,
+         			"CidrIp" : "0.0.0.0/0"
+      			}],
+                "VpcId": {
+                    "Ref": "TestVPC"
+                },
+                "GroupDescription": "Allows HTTP and SSH",
+                "Tags" : [ {"Key" : "Name", "Value" : "TestSG"} ]
+            }
+        },
+        "EC2": {
+            "Type": "AWS::EC2::Instance",
+            "Properties": {
+            	"InstanceType" : "t2.micro",
+            	"ImageId" : "ami-04505e74c0741db8d",
+                "KeyName" : "key_gl",
+                "NetworkInterfaces": [
+                    {
+                        "SubnetId": {
+                            "Ref": "Subnet1"
+                        },
+                        "GroupSet": [{ "Ref" : "TestSG" }],
+                        "DeviceIndex": "0",
+                        "DeleteOnTermination": "true"
+                    }
+                ],
+				"IamInstanceProfile": {
+                    "Ref": "DemoInstanceProfile"
+                },
+                "Tags" : [ {"Key" : "Name", "Value" : "EC2"} ]
+            }
+        },
+		"TestIG": {
+	            "Type": "AWS::EC2::InternetGateway",
+	            "Properties": {
+					"Tags" : [ {"Key" : "Name", "Value" : "TestIG"} ]            
+	            }
+	        },
+        "RouteTable1" : {
+   			"Type" : "AWS::EC2::RouteTable",
+   			"Properties" : {
+      			"VpcId" : { "Ref" : "TestVPC" },
+      			"Tags" : [ {"Key" : "Name", "Value" : "RouteTable1"} ]
+     		}
+   		},
+   		"myRoute1" : {
+   			"Type" : "AWS::EC2::Route",
+   			"Properties" : {
+      			"RouteTableId" : { "Ref" : "RouteTable1" },
+      			"DestinationCidrBlock" : "0.0.0.0/0",
+      			"GatewayId" : { "Ref" : "TestIG" }
+   			}
+		},
+		"mySubnetRouteTableAssociation1" : {
+         "Type" : "AWS::EC2::SubnetRouteTableAssociation",
+         "Properties" : {
+            "SubnetId" : { "Ref" : "Subnet1" },
+            "RouteTableId" : { "Ref" : "RouteTable1" }
+         }
+      },
+   		"IGAttachment" : {
+  			"Type" : "AWS::EC2::VPCGatewayAttachment",
+  			"Properties" : {
+      		"InternetGatewayId" : { "Ref" : "TestIG"},
+      		"VpcId" : { "Ref" : "TestVPC"}
+    		}
+		},
+   		"TestDynamoDB" : {
+  			"Type" : "AWS::DynamoDB::Table",
+  			"Properties" : {
+      			"AttributeDefinitions" : [
+      			 	{
+  						"AttributeName" : "deviceid",
+  						"AttributeType" : "S"
+					}, 
+					{
+  						"AttributeName" : "timestamp",
+  						"AttributeType" : "S"
+					}
+      			 ],
+      			"KeySchema" : [
+      				{
+                        "AttributeName": "deviceid",
+                        "KeyType": "HASH"
+                    },
+                    {
+                        "AttributeName": "timestamp",
+                        "KeyType": "RANGE"
+                    }
+                ],
+      			"TableName" : "m03p02_anomaly_data",
+      			"Tags" : [ {"Key" : "Name", "Value" : "m03p02_anomaly_data"} ],
+      			"ProvisionedThroughput": {
+                    "ReadCapacityUnits": 5,
+                    "WriteCapacityUnits": 5
+                }
+    		}
+		},
+		"TestKinesis" : {
+			"Type" : "AWS::Kinesis::Stream",
+			"Properties" : {
+				"Name" : "m03p02_raw_data_stream",
+				"ShardCount" : 1,
+				"Tags" : [ {"Key" : "Name", "Value" : "m03p02_raw_data_stream"} ]
+			}
+		},
+		"Anomalytopic" : {
+			"Type" : "AWS::SNS::Topic",
+			"Properties" : {
+				"Tags" : [ {"Key" : "Name", "Value" : "m03p02_anomaly_alerts"} ],
+				"TopicName" : "m03p02_anomaly_alerts"
+			}
+		},
+		"subscription": {
+			"Type" : "AWS::SNS::Subscription",
+			"Properties" : {
+				"Endpoint" : "preetiagwl2@gmail.com",
+				"Protocol" : "email",
+				"TopicArn" : { "Ref" : "Anomalytopic" }
+			}
+		},
+		 "S3Bucket": {
+            "Type": "AWS::S3::Bucket",
+            "DeletionPolicy": "Retain",
+            "Properties": {
+                "BucketName": "rawdata-s3-pa"
+            }
+        },
+		"DemoInstanceProfile": {
+            "Type": "AWS::IAM::InstanceProfile",
+            "Properties": {
+                "InstanceProfileName": "demo-ec2-instance-profile",
+                "Path": "/",
+                "Roles": [
+                    {
+                        "Ref": "DemoEc2InstanceRole"
+                    }
+                ]
+            }
+        },
+		"RolePolicies": {
+         "Type": "AWS::IAM::Policy",
+         "Properties": {
+            "PolicyName": "root",
+            "PolicyDocument": {
+               "Version" : "2012-10-17",
+               "Statement": [ {
+                  "Effect": "Allow",
+                  "Action": "*",
+                  "Resource": "*"
+               } ]
+            },
+            "Roles": [ {
+               "Ref": "DemoEc2InstanceRole"
+            } ]
+         }
+      },
+        "DemoEc2InstanceRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "RoleName": "demo-ec2-instance-role",
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    "ec2.amazonaws.com",
+									"codepipeline.amazonaws.com",
+									"codedeploy.amazonaws.com",
+									"codebuild.amazonaws.com",
+									"lambda.amazonaws.com",
+									"s3.amazonaws.com",
+									"cloudwatch.amazonaws.com"
+                                ]
+                            },
+                            "Action": [
+                                "sts:AssumeRole"
+                            ]
+                        }
+                    ]
+                },
+                "Path": "/"
+            }
+        },
+		"LamdbaFunction": {
+		"Type" : "AWS::Lambda::Function",
+		"Properties" : {
+			"Code" : { 
+				"S3Bucket" : "lambda-function-gl",
+				"S3Key" : "anomaly_detection.zip"
+			},
+			"Handler" : "anomaly_detection.lambda_handler",
+			"PackageType" : "Zip",
+			"Role" : "arn:aws:iam::217584094173:role/aws_lambda",
+			"Runtime" : "python3.9",
+			"Timeout" : 100
+			}
+		}
+    }
+}
