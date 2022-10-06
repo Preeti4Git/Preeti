@@ -1,0 +1,1 @@
+This directory will hold all the artifacts and sources of AWS Cloud module

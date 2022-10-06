@@ -1,0 +1,18 @@
+{
+  "rule1":
+      {
+        "rule_name": "Avg_HeartRate",
+        "type": "HeartRate",
+        "avg_min": 85,
+        "avg_max": 105,
+        "trigger_count": 5
+      },
+   "rule2":
+      {
+        "rule_name": "Avg_Temp",
+        "type": "Temperature",
+        "avg_min": 95,
+        "avg_max": 99,
+        "trigger_count": 2
+      }
+}
